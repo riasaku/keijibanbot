@@ -1,16 +1,21 @@
 const { Client, GatewayIntentBits, Partials } = require('discord.js');
-const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
-    partials: [Partials.Message, Partials.Channel, Partials.Reaction]
+const client = new Client({ 
+    intents: [
+        GatewayIntentBits.Guilds, 
+        GatewayIntentBits.GuildMessages, 
+        GatewayIntentBits.MessageContent
+    ],
+    partials: [
+        Partials.Message, 
+        Partials.Channel, 
+        Partials.Reaction
+    ]
 });
 require('dotenv').config();
 
-
-
-// カウンター変数を定義
-let counter = 1;
-
-// メッセージ履歴を保存するマップ
-const messageHistory = new Map();
+// カウンターマップとメッセージ履歴マップを定義
+const counterMap = new Map();
+const messageHistoryMap = new Map();
 
 // ボットが起動したときの処理
 client.once('ready', () => {
@@ -18,23 +23,22 @@ client.once('ready', () => {
 });
 
 client.on('threadCreate', async (thread) => {
-    console.log("a")
     // 親チャンネルが指定された質問チャンネルかどうかを確認
     if (thread.parentId === process.env.QUESTION_CHANNEL_ID) {
-        console.log("a")
         try {
             await thread.join();
             console.log(`Joined thread: ${thread.name}`);
             await thread.send('よろー');
+            // 新しいスレッドに対してカウンターとメッセージ履歴を初期化
+            counterMap.set(thread.id, 1);
+            messageHistoryMap.set(thread.id, new Map());
         } catch (error) {
             console.error(`Failed to join thread: ${thread.name}`, error);
         }
     }
 });
 
-// メッセージが送信されたときの処理
 client.on('messageCreate', async (message) => {
-    console.log("メッセージ送信")
     // ボット自身のメッセージには反応しない
     if (message.author.bot) return;
 
@@ -45,17 +49,28 @@ client.on('messageCreate', async (message) => {
     // スレッドの親チャンネルが質問チャンネルIDかどうかを確認
     if (parentChannel.id !== process.env.QUESTION_CHANNEL_ID) return;
 
-    // メッセージ履歴に追加
-    messageHistory.set(counter, message);
-    await message.channel.send(`${counter}`);
+    // スレッドのIDを取得
+    const threadId = channel.isThread() ? channel.id : null;
 
+    // スレッドが存在しない場合は何もしない
+    if (!threadId) return;
 
-    // "!reset"というメッセージが送信された場合、カウンターをリセット
+    // カウンターとメッセージ履歴を取得または初期化
+    if (!counterMap.has(threadId)) {
+        counterMap.set(threadId, 1);
+    }
+    if (!messageHistoryMap.has(threadId)) {
+        messageHistoryMap.set(threadId, new Map());
+    }
+    const counter = counterMap.get(threadId);
+    const messageHistory = messageHistoryMap.get(threadId);
+
+    // "!reset"というメッセージが送信された場合、カウンターとメッセージ履歴をリセット
     if (message.content === '!reset') {
-        counter = 1;
+        counterMap.set(threadId, 1);
         messageHistory.clear();
-        console.log('Counter has been reset to 0.');
-        await message.reply('Counter has been reset to 0.');
+        console.log('Counter has been reset to 1.');
+        await message.reply('Counter has been reset to 1.');
         return;
     }
 
@@ -72,9 +87,13 @@ client.on('messageCreate', async (message) => {
         return;
     }
 
+    // メッセージ履歴に追加
+    messageHistory.set(counter, message);
+    await message.channel.send(`${counter}`);
+
     // カウンターを増やす
-    counter += 1;
-    console.log(`Counter: ${counter}`);
+    counterMap.set(threadId, counter + 1);
+    console.log(`Counter: ${counter + 1}`);
 });
 
 client.login(process.env.DISCORD_TOKEN);
