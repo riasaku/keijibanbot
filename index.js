@@ -1,4 +1,7 @@
 const { Client, GatewayIntentBits, Partials } = require('discord.js');
+const express = require('express');
+const app = express();
+const port = process.env.PORT || 3000;
 const client = new Client({ 
     intents: [
         GatewayIntentBits.Guilds, 
@@ -97,3 +100,11 @@ client.on('messageCreate', async (message) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
+app.get('/', (req, res) => {
+    res.send('Discord bot is running.');
+  });
+  
+  app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
+  });
