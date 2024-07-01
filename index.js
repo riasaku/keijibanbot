@@ -99,6 +99,12 @@ client.on('messageCreate', async (message) => {
     console.log(`Counter: ${counter + 1}`);
 });
 
+client.on('messageCreate', message => {
+    if (message.content === '生きてる？') {
+      message.channel.send('生きてる');
+    }
+  });
+
 client.login(process.env.DISCORD_TOKEN);
 
 app.get('/', (req, res) => {
