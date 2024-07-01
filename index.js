@@ -85,14 +85,13 @@ client.on('messageCreate', async (message) => {
             const originalMessage = messageHistory.get(messageIndex);
             await message.reply(`> ${originalMessage.content}\n ${originalMessage.author}`);
         } else {
-            await message.reply('Message not found.');
+            await message.reply('メッセージはありません。');
         }
         return;
     }
 
     // メッセージ履歴に追加
     messageHistory.set(counter, message);
-    await message.channel.send(`${counter}`);
 
     // カウンターを増やす
     counterMap.set(threadId, counter + 1);
